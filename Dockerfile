@@ -1,5 +1,5 @@
 # Imagem base do Go mais recente
-FROM golang:1.22-bullseye
+FROM golang:1.23-bullseye
 
 # Instalação de dependências
 RUN apt-get update && apt-get install -y \
