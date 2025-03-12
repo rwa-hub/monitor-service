@@ -1,0 +1,29 @@
+{
+  "name": "Monitor service",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "tal7aouy.icons",
+        "golang.go",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker",
+        "pomdtr.excalidraw-editor"
+      ]
+    }
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/monitor-service,type=bind",
+    "source=${localEnv:HOME}/.go-cache,target=/go/pkg,type=bind"
+  ],
+  "remoteUser": "root",
+  "workspaceFolder": "/monitor-service",
+  "postCreateCommand": ""
+}

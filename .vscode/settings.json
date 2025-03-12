@@ -1,0 +1,18 @@
+{
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.fontFamily": "monospace",
+  "workbench.colorTheme": "Default Dark+",
+  "workbench.iconTheme": "vscode-icons",
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.fontSize": 14,
+  "editor.formatOnSave": true,
+}
