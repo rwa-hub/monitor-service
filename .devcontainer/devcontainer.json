@@ -15,7 +15,8 @@
         "golang.go",
         "eamodio.gitlens",
         "streetsidesoftware.code-spell-checker",
-        "pomdtr.excalidraw-editor"
+        "pomdtr.excalidraw-editor",
+        "jmkrivocapich.drawfolder"
       ]
     }
   },

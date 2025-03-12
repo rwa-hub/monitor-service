@@ -25,6 +25,10 @@ func NewRPCClient(rpcURL string) (*RPCClient, error) {
 	return &RPCClient{client: client, events: make(chan types.Log)}, nil
 }
 
+func (r *RPCClient) Client() *ethclient.Client {
+	return r.client
+}
+
 // EventChannel retorna o canal de eventos
 func (r *RPCClient) EventChannel() <-chan types.Log {
 	return r.events
