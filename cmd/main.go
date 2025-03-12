@@ -5,36 +5,26 @@ import (
 	"monitor-service/internal/adapters/rpc"
 	"monitor-service/internal/adapters/websocket"
 	"monitor-service/internal/app/service"
-	"net/http"
 )
 
 func main() {
+	rpcURL := "ws://host.docker.internal:8546"
+	contractAddress := "0xFa5B6432308d45B54A1CE1373513Fab77166436f"
+
+	wsServer := websocket.NewWebSocketServer()
+	go wsServer.HandleMessages()
+
+	rpcClient, err := rpc.NewRPCClient(rpcURL)
+	if err != nil {
+		log.Fatalf("❌ Erro ao conectar ao nó Ethereum: %v", err)
+	}
 	defer func() {
-		if r := recover(); r != nil {
-			log.Fatalf("Ocorreu um panic: %v", r)
+		client, err := rpcClient.Client()
+		if err == nil {
+			client.Close()
 		}
 	}()
 
-	log.Println("Iniciando o serviço de monitoramento de contratos inteligentes...")
-
-	rpcURL := "http://127.0.0.1:8545"
-	contractAddress := "0x9E545E3C0baAB3E08CdfD552C960A1050f373042" //compliance
-
-	// Cria uma nova instância do cliente RPC
-	rpcClient, err := rpc.NewRPCClient(rpcURL)
-	if err != nil {
-		log.Fatalf("Erro ao conectar ao nó Ethereum: %v", err)
-	}
-
-	wsServer := websocket.NewWebSocketServer()
-
-	// WebSocket
-	http.HandleFunc("/ws", wsServer.HandleConnections)
-	go func() {
-		log.Fatal(http.ListenAndServe(":8080", nil))
-	}()
-
-	// start
 	service.EventService(rpcClient, wsServer, contractAddress)
 
 	select {}

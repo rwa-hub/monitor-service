@@ -16,7 +16,8 @@
         "eamodio.gitlens",
         "streetsidesoftware.code-spell-checker",
         "pomdtr.excalidraw-editor",
-        "jmkrivocapich.drawfolder"
+        "jmkrivocapich.drawfolder",
+        "irtaza.vscode-copy-all-open-files"
       ]
     }
   },
