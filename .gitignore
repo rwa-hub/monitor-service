@@ -1,0 +1,5 @@
+node_modules/
+.go-cache/
+.standard-version/
+.vscode/
+.gitignore

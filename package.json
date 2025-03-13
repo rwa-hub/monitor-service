@@ -15,5 +15,8 @@
     "url": "https://github.com/rwa-hub/monitor-service/issues"
   },
   "homepage": "https://github.com/rwa-hub/monitor-service#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "standard-version": "^9.5.0"
+  }
 }
