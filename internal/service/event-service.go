@@ -13,6 +13,7 @@ import (
 	"monitor-service/internal/service/listeners/identity_registry"
 	"monitor-service/internal/service/listeners/modular_compliance"
 	"monitor-service/internal/service/listeners/registry_md"
+	"monitor-service/internal/service/listeners/token_rwa"
 )
 
 func EventService(
@@ -35,6 +36,7 @@ func EventService(
 		"modular_compliance":     modular_compliance.StartListener,
 		"registry_md":            registry_md.StartListener,
 		"identity_registry":      identity_registry.StartListener,
+		"token_rwa":              token_rwa.StartListener,
 	}
 
 	for key, startFunc := range contractMappings {
