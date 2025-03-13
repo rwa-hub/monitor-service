@@ -1,7 +1,6 @@
 package financial_compliance
 
 import (
-	"encoding/json"
 	"time"
 
 	"monitor-service/internal/adapters/database"
@@ -10,6 +9,7 @@ import (
 	"monitor-service/internal/adapters/rpc"
 	"monitor-service/internal/adapters/websocket"
 	financialcompliance "monitor-service/internal/modules/compliance/FinancialRWA"
+	"monitor-service/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -43,7 +43,7 @@ func listenForBuyerApproved(contract *financialcompliance.Financialcompliance, w
 		opts := &bind.WatchOpts{}
 		eventCh := make(chan *financialcompliance.FinancialcomplianceBuyerApproved)
 
-		sub, err := contract.WatchBuyerApproved(opts, eventCh, nil)
+		sub, err := contract.WatchBuyerApproved(opts, eventCh, nil, nil, nil)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("❌ Error listening to BuyerApproved. Retrying in 5s...")
 			time.Sleep(5 * time.Second)
@@ -51,7 +51,7 @@ func listenForBuyerApproved(contract *financialcompliance.Financialcompliance, w
 		}
 
 		for event := range eventCh {
-			processEvent("BuyerApproved", event, wsServer, queueService, db)
+			utils.ProcessEvent("BuyerApproved", event, wsServer, queueService, db, "financial_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -71,7 +71,7 @@ func listenForComplianceBound(contract *financialcompliance.Financialcompliance,
 		}
 
 		for event := range eventCh {
-			processEvent("ComplianceBound", event, wsServer, queueService, db)
+			utils.ProcessEvent("ComplianceBound", event, wsServer, queueService, db, "financial_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -91,7 +91,7 @@ func listenForComplianceCheckFailed(contract *financialcompliance.Financialcompl
 		}
 
 		for event := range eventCh {
-			processEvent("ComplianceCheckFailed", event, wsServer, queueService, db)
+			utils.ProcessEvent("ComplianceCheckFailed", event, wsServer, queueService, db, "financial_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -111,7 +111,7 @@ func listenForComplianceCheckPassed(contract *financialcompliance.Financialcompl
 		}
 
 		for event := range eventCh {
-			processEvent("ComplianceCheckPassed", event, wsServer, queueService, db)
+			utils.ProcessEvent("ComplianceCheckPassed", event, wsServer, queueService, db, "financial_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -131,7 +131,7 @@ func listenForComplianceUnbound(contract *financialcompliance.Financialcomplianc
 		}
 
 		for event := range eventCh {
-			processEvent("ComplianceUnbound", event, wsServer, queueService, db)
+			utils.ProcessEvent("ComplianceUnbound", event, wsServer, queueService, db, "financial_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -151,50 +151,9 @@ func listenForOwnershipTransferred(contract *financialcompliance.Financialcompli
 		}
 
 		for event := range eventCh {
-			processEvent("OwnershipTransferred", event, wsServer, queueService, db)
+			utils.ProcessEvent("OwnershipTransferred", event, wsServer, queueService, db, "financial_compliance")
 		}
 
 		sub.Unsubscribe()
-	}
-}
-
-func processEvent(eventName string, event interface{}, wsServer *websocket.WebSocketServer, queueService *queue.RabbitMQ, db *database.MongoDB) {
-
-	eventBytes, err := json.Marshal(event)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error converting event to JSON")
-		return
-	}
-
-	var rawData map[string]interface{}
-	if err := json.Unmarshal(eventBytes, &rawData); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error decoding event JSON")
-		return
-	}
-
-	formattedEvent := map[string]interface{}{
-		"eventName":       eventName,
-		"timestamp":       time.Now().UTC().Format(time.RFC3339),
-		"contractAddress": rawData["Raw"].(map[string]interface{})["address"],
-		"transactionHash": rawData["Raw"].(map[string]interface{})["transactionHash"],
-		"blockNumber":     rawData["Raw"].(map[string]interface{})["blockNumber"],
-		"data":            rawData,
-	}
-
-	formattedBytes, err := json.Marshal(formattedEvent)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error formatting event JSON")
-		return
-	}
-	logger.Log.Info().Str("event", eventName).RawJSON("formatted_data", formattedBytes).Msg("📢 Event captured")
-
-	wsServer.Broadcast(formattedBytes)
-
-	if err := queueService.Publish(formattedBytes); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error publishing event to RabbitMQ")
-	}
-
-	if err := db.InsertEvent("financial_compliance", formattedEvent); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error saving event to MongoDB")
 	}
 }
