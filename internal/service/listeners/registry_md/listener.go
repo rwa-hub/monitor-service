@@ -1,7 +1,6 @@
 package registry_md
 
 import (
-	"encoding/json"
 	"math/big"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"monitor-service/internal/adapters/rpc"
 	"monitor-service/internal/adapters/websocket"
 	registrymdcompliance "monitor-service/internal/modules/compliance/RegistryMD"
+	"monitor-service/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -60,29 +60,10 @@ func listenForEvent[T any](
 		}
 
 		for event := range eventCh {
-			processEvent(eventName, event, wsServer, queueService, db)
+			utils.ProcessEvent(eventName, event, wsServer, queueService, db, "registry_md")
 		}
 
 		sub.Unsubscribe()
-	}
-}
-
-func processEvent(eventName string, event interface{}, wsServer *websocket.WebSocketServer, queueService *queue.RabbitMQ, db *database.MongoDB) {
-	eventBytes, err := json.Marshal(event)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error to convert event to JSON")
-		return
-	}
-
-	logger.Log.Info().Str("event", eventName).RawJSON("data", eventBytes).Msg("📢 Event captured")
-	wsServer.Broadcast(eventBytes)
-
-	if err := queueService.Publish(eventBytes); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error to publish event in queue")
-	}
-
-	if err := db.InsertEvent("events", event); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error to save event in MongoDB")
 	}
 }
 
