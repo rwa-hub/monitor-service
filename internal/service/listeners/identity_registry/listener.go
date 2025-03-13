@@ -1,15 +1,13 @@
 package identity_registry
 
 import (
-	"encoding/json"
-	"time"
-
 	"monitor-service/internal/adapters/database"
 	"monitor-service/internal/adapters/logger"
 	"monitor-service/internal/adapters/queue"
 	"monitor-service/internal/adapters/rpc"
 	"monitor-service/internal/adapters/websocket"
 	identityregistry "monitor-service/internal/modules/IdentityRegistry"
+	"monitor-service/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -53,7 +51,7 @@ func listenIdentityRegistered(contract *identityregistry.Identityregistry, wsSer
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("IdentityRegistered", event, wsServer, queueService, db)
+		utils.ProcessEvent("IdentityRegistered", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -68,7 +66,7 @@ func listenIdentityRemoved(contract *identityregistry.Identityregistry, wsServer
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("IdentityRemoved", event, wsServer, queueService, db)
+		utils.ProcessEvent("IdentityRemoved", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -83,7 +81,7 @@ func listenIdentityUpdated(contract *identityregistry.Identityregistry, wsServer
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("IdentityUpdated", event, wsServer, queueService, db)
+		utils.ProcessEvent("IdentityUpdated", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -98,7 +96,7 @@ func listenClaimTopicsRegistrySet(contract *identityregistry.Identityregistry, w
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("ClaimTopicsRegistrySet", event, wsServer, queueService, db)
+		utils.ProcessEvent("ClaimTopicsRegistrySet", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -113,7 +111,7 @@ func listenTrustedIssuersRegistrySet(contract *identityregistry.Identityregistry
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("TrustedIssuersRegistrySet", event, wsServer, queueService, db)
+		utils.ProcessEvent("TrustedIssuersRegistrySet", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -128,7 +126,7 @@ func listenIdentityStorageSet(contract *identityregistry.Identityregistry, wsSer
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("IdentityStorageSet", event, wsServer, queueService, db)
+		utils.ProcessEvent("IdentityStorageSet", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -143,7 +141,7 @@ func listenCountryUpdated(contract *identityregistry.Identityregistry, wsServer 
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("CountryUpdated", event, wsServer, queueService, db)
+		utils.ProcessEvent("CountryUpdated", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -158,7 +156,7 @@ func listenAgentAdded(contract *identityregistry.Identityregistry, wsServer *web
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("AgentAdded", event, wsServer, queueService, db)
+		utils.ProcessEvent("AgentAdded", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -173,7 +171,7 @@ func listenAgentRemoved(contract *identityregistry.Identityregistry, wsServer *w
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("AgentRemoved", event, wsServer, queueService, db)
+		utils.ProcessEvent("AgentRemoved", event, wsServer, queueService, db, "identity_registry")
 	}
 }
 
@@ -188,48 +186,6 @@ func listenOwnershipTransferred(contract *identityregistry.Identityregistry, wsS
 	defer sub.Unsubscribe()
 
 	for event := range eventCh {
-		processEvent("OwnershipTransferred", event, wsServer, queueService, db)
-	}
-}
-
-func processEvent(eventName string, event interface{}, wsServer *websocket.WebSocketServer, queueService *queue.RabbitMQ, db *database.MongoDB) {
-
-	eventBytes, err := json.Marshal(event)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error converting event to JSON")
-		return
-	}
-
-	var rawData map[string]interface{}
-	if err := json.Unmarshal(eventBytes, &rawData); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error parsing event data")
-		return
-	}
-
-	formattedEvent := map[string]interface{}{
-		"eventName":       eventName,
-		"timestamp":       time.Now().UTC().Format(time.RFC3339),
-		"contractAddress": rawData["Raw"].(map[string]interface{})["address"],
-		"transactionHash": rawData["Raw"].(map[string]interface{})["transactionHash"],
-		"blockNumber":     rawData["Raw"].(map[string]interface{})["blockNumber"],
-		"data":            rawData,
-	}
-
-	formattedBytes, err := json.Marshal(formattedEvent)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error formatting event")
-		return
-	}
-
-	logger.Log.Info().Str("event", eventName).RawJSON("formatted_data", formattedBytes).Msg("📢 Event processed")
-
-	wsServer.Broadcast(formattedBytes)
-
-	if err := queueService.Publish(formattedBytes); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error publishing event to queue")
-	}
-
-	if err := db.InsertEvent("events", formattedEvent); err != nil {
-		logger.Log.Error().Err(err).Str("event", eventName).Msg("❌ Error saving event to MongoDB")
+		utils.ProcessEvent("OwnershipTransferred", event, wsServer, queueService, db, "identity_registry")
 	}
 }
