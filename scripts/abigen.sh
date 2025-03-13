@@ -9,3 +9,6 @@ abigen --abi=modules/IdentRegistryStorage/IdentityRegistryStorage.json --pkg=ide
          abigen --abi=compliance/FinancialRWA/FinancialCompliance.json --pkg=financialcompliance --out=compliance/FinancialRWA/financial_compliance.go
 
             abigen --abi=compliance/RegistryMD/RegistryMDCompliance.json --pkg=registrymdcompliance --out=compliance/RegistryMD/registry_md_compliance.go
+
+               abigen --abi=Token/Token.json --pkg=token --out=Token/token.go
+ 
