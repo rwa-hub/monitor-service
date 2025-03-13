@@ -17,11 +17,12 @@ func main() {
 	mongoDBName := "monitor-service"
 
 	contractAddresses := map[string]string{
-		"financial_compliance":   "0x486B9f3Fb089f9166147149562e0A6952442Fa42",
-		"modular_compliance":     "0x9F035Be9853eb3Fc10155361fda197C159eFDD09",
-		"ident_registry_storage": "0xf935973e9f884c66e6E3ce681344064e565e0250",
+		"financial_compliance":   "0xF235Bb30Ad375F279248AaFC89F4A92899A900De",
+		"modular_compliance":     "0x850F95B0f32E9dB5AA484d160CB58f8A52103dc2",
+		"ident_registry_storage": "0xd9bB4402537D044709BC80b666F522A6F0ce6435",
 		"registry_md":            "0xC8c03647d39a96f02f6Ce8999bc22493C290e734",
-		"identity_registry":      "0x6EC5189503e0F03704B737d1977230c5b800A7F5",
+		"identity_registry":      "0x9b5b3cCe1f7f8359E026f9573f258782Be577f29",
+		"token_rwa":              "0x2078FaF714Fb3727a66bc10F7A9690b5A16CD0bb",
 	}
 
 	wsServer := websocket.NewWebSocketServer()
