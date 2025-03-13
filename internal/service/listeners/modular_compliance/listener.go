@@ -1,15 +1,16 @@
 package modular_compliance
 
 import (
-	"encoding/json"
-	"time"
-
 	"monitor-service/internal/adapters/database"
 	"monitor-service/internal/adapters/logger"
 	"monitor-service/internal/adapters/queue"
 	"monitor-service/internal/adapters/rpc"
 	"monitor-service/internal/adapters/websocket"
+	"monitor-service/utils"
+
 	modularcompliance "monitor-service/internal/modules/ModularCompliance"
+
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -37,28 +38,6 @@ func initializeContract(rpcClient *rpc.RPCClient, contractAddress string) (*modu
 	return modularcompliance.NewModularcompliance(common.HexToAddress(contractAddress), client)
 }
 
-func processEvent(eventType string, event interface{}, wsServer *websocket.WebSocketServer, queueService *queue.RabbitMQ, db *database.MongoDB) {
-	eventBytes, err := json.Marshal(event)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("eventType", eventType).Msg("❌ Error converting event to JSON")
-		return
-	}
-
-	wsServer.Broadcast(eventBytes)
-
-	err = queueService.Publish(eventBytes)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("eventType", eventType).Msg("❌ Error sending event to RabbitMQ")
-	}
-
-	err = db.InsertEvent(eventType, event)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("eventType", eventType).Msg("❌ Error storing event in MongoDB")
-	}
-
-	logger.Log.Info().Str("eventType", eventType).Msg("📢 Event processed successfully")
-}
-
 func listenForModuleAdded(contract *modularcompliance.Modularcompliance, wsServer *websocket.WebSocketServer, queueService *queue.RabbitMQ, db *database.MongoDB) {
 	for {
 		opts := &bind.WatchOpts{}
@@ -72,7 +51,7 @@ func listenForModuleAdded(contract *modularcompliance.Modularcompliance, wsServe
 		}
 
 		for event := range eventCh {
-			processEvent("ModuleAdded", event, wsServer, queueService, db)
+			utils.ProcessEvent("ModuleAdded", event, wsServer, queueService, db, "modular_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -92,7 +71,7 @@ func listenForModuleRemoved(contract *modularcompliance.Modularcompliance, wsSer
 		}
 
 		for event := range eventCh {
-			processEvent("ModuleRemoved", event, wsServer, queueService, db)
+			utils.ProcessEvent("ModuleRemoved", event, wsServer, queueService, db, "modular_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -112,7 +91,7 @@ func listenForOwnershipTransferred(contract *modularcompliance.Modularcompliance
 		}
 
 		for event := range eventCh {
-			processEvent("OwnershipTransferred", event, wsServer, queueService, db)
+			utils.ProcessEvent("OwnershipTransferred", event, wsServer, queueService, db, "modular_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -132,7 +111,7 @@ func listenForTokenBound(contract *modularcompliance.Modularcompliance, wsServer
 		}
 
 		for event := range eventCh {
-			processEvent("TokenBound", event, wsServer, queueService, db)
+			utils.ProcessEvent("TokenBound", event, wsServer, queueService, db, "modular_compliance")
 		}
 
 		sub.Unsubscribe()
@@ -152,7 +131,7 @@ func listenForTokenUnbound(contract *modularcompliance.Modularcompliance, wsServ
 		}
 
 		for event := range eventCh {
-			processEvent("TokenUnbound", event, wsServer, queueService, db)
+			utils.ProcessEvent("TokenUnbound", event, wsServer, queueService, db, "modular_compliance")
 		}
 
 		sub.Unsubscribe()
