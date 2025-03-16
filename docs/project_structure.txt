@@ -1,0 +1,71 @@
+[.devcontainer]
+  - devcontainer.json
+[.github]
+  [workflows]
+    - release.yml
+  - dependabot.yml
+[cmd]
+  - main.go
+[docs]
+[internal]
+  [adapters]
+    [database]
+      - mongo.go
+    [logger]
+      - logger.go
+    [queue]
+      - rabbit.go
+    [rpc]
+      - rpc.go
+    [websocket]
+      - websocket.go
+  [api]
+    - http.go
+  [modules]
+    [IdentRegistryStorage]
+      - IdentityRegistryStorage.json
+      - identity_registry_storage.go
+    [IdentityRegistry]
+      - IdentityRegistry.json
+      - identity_registry.go
+    [ModularCompliance]
+      - ModularCompliance.json
+      - modular_compliance.go
+    [Token]
+      - Token.json
+      - token.go
+    [compliance]
+      [FinancialRWA]
+        - FinancialCompliance.json
+        - financial_compliance.go
+      [RegistryMD]
+        - RegistryMDCompliance.json
+        - registry_md_compliance.go
+  [service]
+    [listeners]
+      [financial_compliance]
+        - listener.go
+      [ident_registry_storage]
+        - listener.go
+      [identity_registry]
+        - listener.go
+      [modular_compliance]
+        - listener.go
+      [registry_md]
+        - listener.go
+      [token_rwa]
+        - listener.go
+    - blockchain-service.go
+    - event-service.go
+[scripts]
+  - abigen.sh
+[utils]
+  - format.go
+- Dockerfile
+- LICENSE
+- commitlint.config.js
+- docker-compose.yml
+- go.mod
+- go.sum
+- package-lock.json
+- package.json

@@ -29,6 +29,6 @@ RUN mkdir -p ~/.go-cache
 RUN chmod -R 755 ~/.go-cache
 
 # Configuração do diretório de trabalho
-WORKDIR /monitor-service
+WORKDIR /monitor
 # Comando padrão ao iniciar o container
 CMD ["bash"]

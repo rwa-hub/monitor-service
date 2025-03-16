@@ -3,15 +3,20 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
+
+	socketio "github.com/googollee/go-socket.io"
 
 	"monitor-service/internal/adapters/database"
 	"monitor-service/internal/adapters/queue"
 	"monitor-service/internal/adapters/rpc"
 	"monitor-service/internal/adapters/websocket"
+	"monitor-service/internal/api"
 	service "monitor-service/internal/service"
 )
 
 func main() {
+	// 🔹 Configuração inicial
 	rpcURL := "ws://host.docker.internal:8546"
 	mongoURI := "mongodb://admin:password@host.docker.internal:27017/"
 	mongoDBName := "monitor-service"
@@ -26,11 +31,12 @@ func main() {
 	}
 
 	wsServer := websocket.NewWebSocketServer()
-	http.HandleFunc("/ws", wsServer.HandleConnections)
+	log.Println("📡 Iniciando WebSocket Server...")
 
+	// 🔹 Inicializa conexão com o RPC
 	rpcClient, err := rpc.NewRPCClient(rpcURL)
 	if err != nil {
-		log.Fatalf("❌ Error the connection to the RPC: %v", err)
+		log.Fatalf("❌ Erro ao conectar ao RPC: %v", err)
 	}
 
 	client, err := rpcClient.Client()
@@ -38,24 +44,73 @@ func main() {
 		defer client.Close()
 	}
 
+	// 🔹 Conexão com MongoDB
 	db, err := database.NewMongoDB(mongoURI, mongoDBName)
 	if err != nil {
-		log.Fatalf("❌ Error the connection to the MongoDB: %v", err)
+		log.Fatalf("❌ Erro ao conectar ao MongoDB: %v", err)
 	}
 
+	// 🔹 Conexão com RabbitMQ
 	queueService, err := queue.NewRabbitMQ("monitor-events")
 	if err != nil {
-		log.Fatalf("❌ Error the connection to the RabbitMQ: %v", err)
+		log.Fatalf("❌ Erro ao conectar ao RabbitMQ: %v", err)
 	}
 	defer queueService.Close()
 
+	// 🔥 Configuração do Socket.IO
+	serverSocket := socketio.NewServer(nil)
+
+	// 🔥 Evento de conexão do Socket.IO
+	serverSocket.OnConnect("/", func(s socketio.Conn) error {
+		log.Println("🔌 Novo cliente conectado:", s.ID())
+		s.Emit("message", "Bem-vindo ao WebSocket!")
+		return nil
+	})
+
+	// 🔥 Evento de recebimento de mensagem
+	serverSocket.OnEvent("/", "message", func(s socketio.Conn, msg string) {
+		log.Println("📩 Mensagem recebida:", msg)
+		s.Emit("response", "Mensagem recebida com sucesso!")
+	})
+
+	// 🔥 Evento de desconexão
+	serverSocket.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		log.Println("❌ Cliente desconectado:", s.ID(), "Motivo:", reason)
+	})
+
+	go serverSocket.Serve()
+	defer serverSocket.Close()
+
+	// 🔹 Configuração das rotas HTTP
+	router := api.SetupRoutes(db)
+
+	// 🔹 Habilita WebSocket `/ws`
+	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		wsServer.HandleConnections(w, r)
+	})
+
+	// 🔹 Rota para Socket.IO `/socket.io/`
+	router.Handle("/socket.io/", serverSocket)
+
+	// 🔹 Inicia serviço de eventos
 	go service.EventService(rpcClient, wsServer, queueService, db, contractAddresses)
 
+	// 🔹 Inicia servidor HTTP
 	port := ":8080"
-	log.Printf("✅ Server WebSocket started on port %s", port)
+	log.Printf("✅ Servidor iniciado na porta %s", port)
 
-	err = http.ListenAndServe(port, nil)
+	srv := &http.Server{
+		Handler:      router,
+		Addr:         port,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	err = srv.ListenAndServe()
 	if err != nil {
-		log.Fatalf("❌ Error to start the HTTP server: %v", err)
+		log.Fatalf("❌ Erro ao iniciar o servidor HTTP: %v", err)
 	}
 }

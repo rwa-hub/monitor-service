@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// RPCClient gerencia a conexão WebSocket e eventos do Ethereum
 type RPCClient struct {
 	client    *ethclient.Client
 	rpcURL    string
@@ -22,7 +21,6 @@ type RPCClient struct {
 	connected bool
 }
 
-// NewRPCClient cria uma nova instância de RPCClient
 func NewRPCClient(rpcURL string) (*RPCClient, error) {
 	rpc := &RPCClient{
 		rpcURL:    rpcURL,
@@ -37,30 +35,28 @@ func NewRPCClient(rpcURL string) (*RPCClient, error) {
 	return rpc, nil
 }
 
-// connect inicia a conexão com o WebSocket do Ethereum
 func (r *RPCClient) connect() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	client, err := ethclient.Dial(r.rpcURL)
 	if err != nil {
-		log.Printf("❌ Falha ao conectar ao nó Ethereum: %v", err)
+		log.Printf("❌ Error to connect to Ethereum node: %v", err)
 		return err
 	}
 
 	r.client = client
 	r.connected = true
-	log.Println("✅ Conectado ao Ethereum WebSocket com sucesso!")
+	log.Println("--> Connected to Ethereum WebSocket successfully!")
 	return nil
 }
 
-// Client retorna a instância do cliente Ethereum, garantindo que nunca seja nil
 func (r *RPCClient) Client() (*ethclient.Client, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if r.client == nil {
-		log.Println("⚠️ Cliente Ethereum está nil. Tentando reconectar...")
+		log.Println("--> Ethereum client is nil. Trying to reconnect...")
 		if err := r.connect(); err != nil {
 			return nil, err
 		}
@@ -69,29 +65,27 @@ func (r *RPCClient) Client() (*ethclient.Client, error) {
 	return r.client, nil
 }
 
-// Reconnect força a reconexão ao nó Ethereum
 func (r *RPCClient) Reconnect() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	log.Println("⚠️ Tentando reconectar ao nó Ethereum WebSocket...")
+	log.Println("--> Trying to reconnect to Ethereum WebSocket...")
 	for i := 1; i <= 5; i++ {
 		client, err := ethclient.Dial(r.rpcURL)
 		if err == nil {
 			r.client = client
 			r.connected = true
-			log.Println("✅ Reconectado com sucesso ao Ethereum WebSocket!")
+			log.Println("--> Reconnected successfully to Ethereum WebSocket!")
 			return nil
 		}
 
-		log.Printf("❌ Falha ao reconectar (%d/5). Tentando novamente em 3s...\n", i)
+		log.Printf("❌ Error to reconnect (%d/5). Retrying in 3s...\n", i)
 		time.Sleep(3 * time.Second)
 	}
 
-	return errors.New("falha ao reconectar após várias tentativas")
+	return errors.New("error to reconnect after several attempts")
 }
 
-// ListenEvents escuta eventos de contratos e reconecta caso a conexão caia
 func (r *RPCClient) ListenEvents(contractAddress string, eventSignature string) {
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{common.HexToAddress(contractAddress)},
@@ -100,31 +94,32 @@ func (r *RPCClient) ListenEvents(contractAddress string, eventSignature string) 
 	for {
 		client, err := r.Client()
 		if err != nil {
-			log.Println("⚠️ Cliente Ethereum ainda indisponível. Tentando reconectar...")
+			log.Println("--> Ethereum client is still unavailable. Trying to reconnect...")
 			time.Sleep(3 * time.Second)
 			continue
 		}
 
-		log.Println("🎧 Iniciando escuta de eventos...")
+		log.Println("--> Starting event listening...")
 
 		logs := make(chan types.Log)
 		sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 		if err != nil {
-			log.Printf("❌ Erro ao iniciar a subscrição: %v\n", err)
+			log.Printf("❌ Error to start subscription: %v\n", err)
 			time.Sleep(3 * time.Second)
 			continue
 		}
 
+	outerLoop:
 		for {
 			select {
 			case err := <-sub.Err():
-				log.Printf("❌ Erro na conexão WebSocket: %v\n", err)
+				log.Printf("❌ Error in WebSocket connection: %v\n", err)
 				sub.Unsubscribe()
 				r.connected = false
 				time.Sleep(3 * time.Second)
-				break
+				break outerLoop
 			case vLog := <-logs:
-				log.Println("📢 Evento capturado:", vLog)
+				log.Println("--> Event captured:", vLog)
 				r.events <- vLog
 			}
 		}

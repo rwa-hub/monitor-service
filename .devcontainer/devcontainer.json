@@ -4,6 +4,8 @@
     "dockerfile": "../Dockerfile",
     "context": ".."
   },
+  "workspaceMount": "source=/Users/hub/Documents/Development/rwa-hub/monitor-service,target=/workspaces/monitor,type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces/monitor",
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/node:1": {}
@@ -20,11 +22,6 @@
       ]
     }
   },
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/monitor-service,type=bind",
-    "source=${localEnv:HOME}/.go-cache,target=/go/pkg,type=bind"
-  ],
   "remoteUser": "root",
-  "workspaceFolder": "/monitor-service",
   "postCreateCommand": ""
 }

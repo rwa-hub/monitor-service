@@ -45,7 +45,7 @@ func listenForModuleAdded(contract *modularcompliance.Modularcompliance, wsServe
 
 		sub, err := contract.WatchModuleAdded(opts, eventCh, nil)
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("❌ Erro ao escutar eventos ModuleAdded. Tentando novamente em 5s...")
+			logger.Log.Error().Err(err).Msg("❌ Error listening for ModuleAdded events. Retrying in 5s...")
 			time.Sleep(5 * time.Second)
 			continue
 		}
