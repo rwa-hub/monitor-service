@@ -17,17 +17,17 @@ import (
 
 func main() {
 	// 🔹 Configuração inicial
-	rpcURL := "ws://host.docker.internal:8546"
-	mongoURI := "mongodb://admin:password@host.docker.internal:27017/"
+	rpcURL := "ws://localhost:8546"
+	mongoURI := "mongodb://admin:password@localhost:27017/"
 	mongoDBName := "monitor-service"
 
 	contractAddresses := map[string]string{
-		"financial_compliance":   "0xF235Bb30Ad375F279248AaFC89F4A92899A900De",
-		"modular_compliance":     "0x850F95B0f32E9dB5AA484d160CB58f8A52103dc2",
-		"ident_registry_storage": "0xd9bB4402537D044709BC80b666F522A6F0ce6435",
-		"registry_md":            "0xC8c03647d39a96f02f6Ce8999bc22493C290e734",
-		"identity_registry":      "0x9b5b3cCe1f7f8359E026f9573f258782Be577f29",
-		"token_rwa":              "0x2078FaF714Fb3727a66bc10F7A9690b5A16CD0bb",
+		"financial_compliance":   "0xb726288807e3D9D8a1b820C6Cb59b00546Eec6Ec",
+		"modular_compliance":     "0x727547e5E17756425A257827DeA9832f845Bb6e9",
+		"ident_registry_storage": "0x1E39d4bCda350162C60DDb56a49241eC1Fb0F8b0",
+		"registry_md":            "0x64998624b832cF3F95A81F9b383a9cFc7c58D064",
+		"identity_registry":      "0x0D8CA8E4c0ECE2a1107d712ec76F6F91814Be243",
+		"token_rwa":              "0x64998624b832cF3F95A81F9b383a9cFc7c58D064",
 	}
 
 	wsServer := websocket.NewWebSocketServer()
@@ -99,7 +99,7 @@ func main() {
 	go service.EventService(rpcClient, wsServer, queueService, db, contractAddresses)
 
 	// 🔹 Inicia servidor HTTP
-	port := ":8080"
+	port := ":8082"
 	log.Printf("✅ Servidor iniciado na porta %s", port)
 
 	srv := &http.Server{

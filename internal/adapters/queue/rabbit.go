@@ -11,7 +11,7 @@ type RabbitMQ struct {
 }
 
 func NewRabbitMQ(queueName string) (*RabbitMQ, error) {
-	conn, err := amqp.Dial("amqp://admin:password@host.docker.internal:5672/")
+	conn, err := amqp.Dial("amqp://admin:password@localhost:5672/")
 	if err != nil {
 		return nil, err
 	}
