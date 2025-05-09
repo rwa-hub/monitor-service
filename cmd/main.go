@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	socketio "github.com/googollee/go-socket.io"
+	"github.com/joho/godotenv"
 
 	"monitor-service/internal/adapters/database"
 	"monitor-service/internal/adapters/queue"
@@ -15,19 +18,79 @@ import (
 	service "monitor-service/internal/service"
 )
 
-func main() {
-	// 🔹 Configuração inicial
-	rpcURL := "ws://localhost:8546"
-	mongoURI := "mongodb://admin:password@localhost:27017/"
-	mongoDBName := "monitor-service"
+// checkRequiredEnvVars verifica se todas as variáveis de ambiente necessárias estão definidas
+func checkRequiredEnvVars() error {
+	required := []struct {
+		name        string
+		description string
+	}{
+		{"CONTRACT_FINANCIAL_COMPLIANCE", "Endereço do contrato Financial Compliance"},
+		{"CONTRACT_MODULAR_COMPLIANCE", "Endereço do contrato Modular Compliance"},
+		{"CONTRACT_IDENT_REGISTRY_STORAGE", "Endereço do contrato Identity Registry Storage"},
+		{"CONTRACT_REGISTRY_MD", "Endereço do contrato Registry MD"},
+		{"CONTRACT_IDENTITY_REGISTRY", "Endereço do contrato Identity Registry"},
+		{"CONTRACT_TOKEN_RWA", "Endereço do contrato Token RWA"},
+	}
 
+	var missingVars []string
+	for _, env := range required {
+		if os.Getenv(env.name) == "" {
+			missingVars = append(missingVars, fmt.Sprintf("%s (%s)", env.name, env.description))
+		}
+	}
+
+	if len(missingVars) > 0 {
+		return fmt.Errorf("as seguintes variáveis de ambiente são obrigatórias mas não foram definidas:\n%s",
+			formatMissingVars(missingVars))
+	}
+
+	return nil
+}
+
+// formatMissingVars formata a lista de variáveis faltantes para exibição
+func formatMissingVars(vars []string) string {
+	var result string
+	for _, v := range vars {
+		result += fmt.Sprintf("- %s\n", v)
+	}
+	return result
+}
+
+func main() {
+	// 🔹 Carrega variáveis de ambiente
+	if err := godotenv.Load(); err != nil {
+		log.Printf("⚠️ Arquivo .env não encontrado: %v", err)
+	}
+
+	// Verifica variáveis de ambiente obrigatórias
+	if err := checkRequiredEnvVars(); err != nil {
+		log.Fatalf("❌ Erro de configuração:\n%v", err)
+	}
+
+	// 🔹 Configuração inicial
+	rpcURL := os.Getenv("RPC_URL")
+	if rpcURL == "" {
+		rpcURL = "ws://localhost:8546" // valor padrão
+	}
+
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://admin:password@localhost:27017/" // valor padrão
+	}
+
+	mongoDBName := os.Getenv("MONGO_DB_NAME")
+	if mongoDBName == "" {
+		mongoDBName = "monitor-service" // valor padrão
+	}
+
+	// 🔹 Configuração dos endereços dos contratos
 	contractAddresses := map[string]string{
-		"financial_compliance":   "0xb726288807e3D9D8a1b820C6Cb59b00546Eec6Ec",
-		"modular_compliance":     "0x727547e5E17756425A257827DeA9832f845Bb6e9",
-		"ident_registry_storage": "0x1E39d4bCda350162C60DDb56a49241eC1Fb0F8b0",
-		"registry_md":            "0x64998624b832cF3F95A81F9b383a9cFc7c58D064",
-		"identity_registry":      "0x0D8CA8E4c0ECE2a1107d712ec76F6F91814Be243",
-		"token_rwa":              "0x64998624b832cF3F95A81F9b383a9cFc7c58D064",
+		"financial_compliance":   os.Getenv("CONTRACT_FINANCIAL_COMPLIANCE"),
+		"modular_compliance":     os.Getenv("CONTRACT_MODULAR_COMPLIANCE"),
+		"ident_registry_storage": os.Getenv("CONTRACT_IDENT_REGISTRY_STORAGE"),
+		"registry_md":            os.Getenv("CONTRACT_REGISTRY_MD"),
+		"identity_registry":      os.Getenv("CONTRACT_IDENTITY_REGISTRY"),
+		"token_rwa":              os.Getenv("CONTRACT_TOKEN_RWA"),
 	}
 
 	wsServer := websocket.NewWebSocketServer()
@@ -51,7 +114,12 @@ func main() {
 	}
 
 	// 🔹 Conexão com RabbitMQ
-	queueService, err := queue.NewRabbitMQ("monitor-events")
+	queueName := os.Getenv("RABBITMQ_QUEUE_NAME")
+	if queueName == "" {
+		queueName = "monitor-events" // valor padrão
+	}
+
+	queueService, err := queue.NewRabbitMQ(queueName)
 	if err != nil {
 		log.Fatalf("❌ Erro ao conectar ao RabbitMQ: %v", err)
 	}
@@ -99,7 +167,14 @@ func main() {
 	go service.EventService(rpcClient, wsServer, queueService, db, contractAddresses)
 
 	// 🔹 Inicia servidor HTTP
-	port := ":8082"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8082" // valor padrão
+	}
+	if port[0] != ':' {
+		port = ":" + port
+	}
+
 	log.Printf("✅ Servidor iniciado na porta %s", port)
 
 	srv := &http.Server{
