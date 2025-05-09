@@ -1,5 +1,5 @@
 # Imagem base do Go mais recente
-FROM golang:1.23-bullseye
+FROM golang:1.24.3-bookworm
 
 # Instalação de dependências
 RUN apt-get update && apt-get install -y \
@@ -23,12 +23,24 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+# Instalação do Air para hot-reload
+RUN go install github.com/cosmtrek/air@v1.49.0
+
 # Criação do diretório .go-cache
 RUN mkdir -p /go/pkg
 RUN mkdir -p ~/.go-cache
 RUN chmod -R 755 ~/.go-cache
 
 # Configuração do diretório de trabalho
-WORKDIR /monitor
-# Comando padrão ao iniciar o container
-CMD ["bash"]
+WORKDIR /app
+
+# Configuração do ambiente de desenvolvimento
+ENV GO111MODULE=on \
+  CGO_ENABLED=0 \
+  GOOS=linux \
+  GOARCH=amd64 \
+  APP_ENV=development \
+  GOTOOLCHAIN=local
+
+# O código será montado como volume no docker-compose
+CMD ["air", "-c", ".air.toml"]

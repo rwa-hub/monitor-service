@@ -1,14 +1,13 @@
 module monitor-service
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.24.3
 
 require (
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/googollee/go-socket.io v1.7.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
+	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.33.0
 	github.com/streadway/amqp v1.1.0
 	go.mongodb.org/mongo-driver v1.17.3
@@ -33,7 +32,6 @@ require (
 	github.com/gomodule/redigo v1.8.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

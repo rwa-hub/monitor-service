@@ -15,7 +15,11 @@
   "files.autoSaveDelay": 1000,
   "editor.fontSize": 14,
   "editor.formatOnSave": true,
-  "cSpell.words": [
-    "financialcompliance"
-  ],
+  "cSpell.words": ["financialcompliance"],
+  "evenBetterToml.schema.associations": {
+    ".air.toml": ""
+  },
+  "[toml]": {
+    "editor.formatOnSave": true
+  }
 }

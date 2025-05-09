@@ -1,6 +1,11 @@
 package queue
 
 import (
+	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/streadway/amqp"
 )
 
@@ -11,9 +16,46 @@ type RabbitMQ struct {
 }
 
 func NewRabbitMQ(queueName string) (*RabbitMQ, error) {
-	conn, err := amqp.Dial("amqp://admin:password@localhost:5672/")
+	host := os.Getenv("RABBITMQ_HOST")
+	if host == "" {
+		host = "rabbitmq"
+	}
+
+	port := os.Getenv("RABBITMQ_PORT")
+	if port == "" {
+		port = "5672"
+	}
+
+	user := os.Getenv("RABBITMQ_USER")
+	if user == "" {
+		user = "guest"
+	}
+
+	password := os.Getenv("RABBITMQ_PASSWORD")
+	if password == "" {
+		password = "guest"
+	}
+
+	url := fmt.Sprintf("amqp://%s:%s@%s:%s/", user, password, host, port)
+
+	var conn *amqp.Connection
+	var err error
+	maxRetries := 5
+	retryDelay := time.Second * 5
+
+	for i := 0; i < maxRetries; i++ {
+		conn, err = amqp.Dial(url)
+		if err == nil {
+			break
+		}
+		log.Printf("Tentativa %d de %d de conectar ao RabbitMQ: %v", i+1, maxRetries, err)
+		if i < maxRetries-1 {
+			time.Sleep(retryDelay)
+		}
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("falha ao conectar ao RabbitMQ após %d tentativas: %v", maxRetries, err)
 	}
 
 	ch, err := conn.Channel()

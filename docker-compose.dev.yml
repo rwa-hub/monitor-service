@@ -1,0 +1,83 @@
+services:
+  monitor-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitor-service
+    ports:
+      - "8082:8082"
+    volumes:
+      - .:/app # Monta o código atual no container
+      - go-cache:/go/pkg/mod # Cache de módulos Go
+      - go-build-cache:/root/.cache/go-build # Cache de build
+    env_file:
+      - .env
+    environment:
+      - GO111MODULE=on
+      - CGO_ENABLED=0
+      - GOOS=linux
+      - GOARCH=amd64
+      - APP_ENV=development
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - monitor-network
+    # Habilita modo interativo para debug
+    stdin_open: true
+    tty: true
+    # Adiciona retry para conexão com RabbitMQ
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - monitor-network
+    # Healthcheck para garantir que o MongoDB está pronto
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - monitor-network
+    # Healthcheck para garantir que o RabbitMQ está pronto
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+networks:
+  monitor-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
+  go-cache:
+  go-build-cache:
