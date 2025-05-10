@@ -24,7 +24,7 @@ func checkRequiredEnvVars() error {
 		name        string
 		description string
 	}{
-		{"CONTRACT_FINANCIAL_COMPLIANCE", "Endereço do contrato Financial Compliance"},
+		{"CONTRACT_COMPLIANCE", "Endereço do contrato Financial Compliance"},
 		{"CONTRACT_MODULAR_COMPLIANCE", "Endereço do contrato Modular Compliance"},
 		{"CONTRACT_IDENT_REGISTRY_STORAGE", "Endereço do contrato Identity Registry Storage"},
 		{"CONTRACT_REGISTRY_MD", "Endereço do contrato Registry MD"},
@@ -70,22 +70,22 @@ func main() {
 	// 🔹 Configuração inicial
 	rpcURL := os.Getenv("RPC_URL")
 	if rpcURL == "" {
-		rpcURL = "ws://localhost:8546" // valor padrão
+		rpcURL = "ws://host.docker.internal:8546"
 	}
 
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
-		mongoURI = "mongodb://admin:password@localhost:27017/" // valor padrão
+		mongoURI = "mongodb://admin:password@mongodb:27017/"
 	}
 
 	mongoDBName := os.Getenv("MONGO_DB_NAME")
 	if mongoDBName == "" {
-		mongoDBName = "monitor-service" // valor padrão
+		mongoDBName = "monitor-service"
 	}
 
 	// 🔹 Configuração dos endereços dos contratos
 	contractAddresses := map[string]string{
-		"financial_compliance":   os.Getenv("CONTRACT_FINANCIAL_COMPLIANCE"),
+		"financial_compliance":   os.Getenv("CONTRACT_COMPLIANCE"),
 		"modular_compliance":     os.Getenv("CONTRACT_MODULAR_COMPLIANCE"),
 		"ident_registry_storage": os.Getenv("CONTRACT_IDENT_REGISTRY_STORAGE"),
 		"registry_md":            os.Getenv("CONTRACT_REGISTRY_MD"),
